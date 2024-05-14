@@ -7,15 +7,15 @@
 #
 ################################################################################
 # \copyright
-# Copyright 2018-2023, Cypress Semiconductor Corporation (an Infineon company)
+# Copyright 2024, Cypress Semiconductor Corporation (an Infineon company)
 # SPDX-License-Identifier: Apache-2.0
-#
+# 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
+# 
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -102,18 +102,48 @@ SOURCES=
 # directories (without a leading -I).
 INCLUDES=
 
+DEFINES=CY_RETARGET_IO_CONVERT_LF_TO_CRLF
+
+ifeq (APP_CY8CKIT-062S2-AI, $(TARGET))
+DEFINES+=AI_KIT
+else
 # Add additional defines to the build process (without a leading -D).
 # This library nativly supports being used with one of three Arduino
 # compatable shield boards. To change what shield is targeted, change
 # the define below. Supported values are:
-# 	EPD_SHIELD: For the CY8CKIT-028-EPD with the BMI-160 sensor
-# 	SENSE_SHIELDv1: For the CY8CKIT-028-SENSE with the BMX-160 sensor
-# 	SENSE_SHIELDv2: For the CY8CKIT-028-SENSE with the BMI-160 sensor
-# 	TFT_SHIELD: For the CY8CKIT-028-TFT with the BMI-160 sensor
-DEFINES=CY_RETARGET_IO_CONVERT_LF_TO_CRLF SENSE_SHIELDv1
+# TFT_SHIELD              -- Using the 028-TFT shield
+# EPD_SHIELD		      -- Using the 028-EPD shield
+# SENSE_SHIELDv1            -- Using the 028-SENSE shield rev** or rev*A
+# SENSE_SHIELDv2         -- Using the 028-SENSE shield rev*B or later
+DEFINES+=SENSE_SHIELDv1
+endif
 
+# Exclude redundant files based on shield selection
+ifneq (,$(findstring TFT_SHIELD,$(DEFINES)))
+CY_IGNORE+= $(SEARCH_CY8CKIT-028-EPD) $(SEARCH_CY8CKIT-028-SENSE) \
+		$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI270_SensorAPI) $(SEARCH_BMM150-Sensor-API)
+endif
+ifneq (,$(findstring EPD_SHIELD,$(DEFINES)))
+CY_IGNORE+= $(SEARCH_CY8CKIT-028-SENSE) $(SEARCH_CY8CKIT-028-TFT) \
+		$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI270_SensorAPI) $(SEARCH_BMM150-Sensor-API)
+endif
 ifneq (,$(findstring SENSE_SHIELDv1,$(DEFINES)))
 DEFINES+=BMI160_CHIP_ID=UINT8_C\(0xD8\)
+CY_IGNORE+= $(SEARCH_CY8CKIT-028-EPD) $(SEARCH_CY8CKIT-028-TFT) \
+		$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-motion-bmi160) \
+        $(SEARCH_BMI270_SensorAPI)
+endif
+ifneq (,$(findstring SENSE_SHIELD_v2,$(DEFINES)))
+CY_IGNORE+= $(SEARCH_CY8CKIT-028-EPD) $(SEARCH_CY8CKIT-028-TFT) \
+		$(SEARCH_sensor-motion-bmi270) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI270_SensorAPI) $(SEARCH_BMM150-Sensor-API)
+endif
+ifneq (,$(findstring AI_KIT,$(DEFINES)))
+CY_IGNORE+= $(SEARCH_CY8CKIT-028-EPD) $(SEARCH_CY8CKIT-028-SENSE) $(SEARCH_CY8CKIT-028-TFT) \
+		$(SEARCH_sensor-motion-bmi160) $(SEARCH_sensor-orientation-bmx160) \
+        $(SEARCH_BMI160_driver) $(SEARCH_BMM150-Sensor-API)
 endif
 
 # Select softfp or hardfp floating point. Default is softfp.
@@ -148,7 +178,9 @@ LINKER_SCRIPT=
 
 # Custom pre-build commands to run.
 # Fixup the Bosh BMI160 driver to allow it to also work with the BMX160 chip id
-PREBUILD=$(SEARCH_sensor-orientation-bmx160)/bmx160_fix.bash "libs/BMI160_driver/bmi160_defs.h"
+ifneq (AI_KIT, $(DEFINES))
+PREBUILD+=$(SEARCH_sensor-orientation-bmx160)/bmx160_fix.bash "$(SEARCH_BMI160_driver)/bmi160_defs.h"
+endif
 
 # Custom post-build commands to run.
 POSTBUILD=

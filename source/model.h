@@ -316,16 +316,16 @@ static const IMAI_stats IMAI_validation_stats[] = IMAI_VALIDATION_STATS;
 #define IMAI_MODEL_ID {0xc6, 0x23, 0x28, 0x2e, 0x6d, 0x15, 0x8c, 0x41, 0x9c, 0xca, 0xf9, 0x45, 0xf1, 0x1c, 0xbc, 0xd4}
 
 // First nibble is bit encoding, second nibble is number of bytes
-#define IMAGINET_TYPES_NONE	(0x0)
-#define IMAGINET_TYPES_FLOAT32	(0x14)
-#define IMAGINET_TYPES_FLOAT64	(0x18)
-#define IMAGINET_TYPES_INT8	(0x21)
-#define IMAGINET_TYPES_INT16	(0x22)
-#define IMAGINET_TYPES_INT32	(0x24)
-#define IMAGINET_TYPES_INT64	(0x28)
-#define IMAGINET_TYPES_QDYN8	(0x31)
-#define IMAGINET_TYPES_QDYN16	(0x32)
-#define IMAGINET_TYPES_QDYN32	(0x34)
+#define IMAGINET_TYPES_NONE (0x0)
+#define IMAGINET_TYPES_FLOAT32  (0x14)
+#define IMAGINET_TYPES_FLOAT64  (0x18)
+#define IMAGINET_TYPES_INT8 (0x21)
+#define IMAGINET_TYPES_INT16    (0x22)
+#define IMAGINET_TYPES_INT32    (0x24)
+#define IMAGINET_TYPES_INT64    (0x28)
+#define IMAGINET_TYPES_QDYN8    (0x31)
+#define IMAGINET_TYPES_QDYN16   (0x32)
+#define IMAGINET_TYPES_QDYN32   (0x34)
 
 // data_in [3] (12 bytes)
 #define IMAI_DATA_IN_COUNT (3)

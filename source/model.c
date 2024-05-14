@@ -1105,11 +1105,11 @@ static const uint32_t _K36[] = {
 // https://en.wikipedia.org/wiki/Circular_buffer
 typedef struct
 {
-	char *buf;
-	int size;		// total bytes allocated in *buf
-	int used;		// current bytes used in buffer.
-	int read;
-	int write;
+    char *buf;
+    int size;       // total bytes allocated in *buf
+    int used;       // current bytes used in buffer.
+    int read;
+    int write;
 } cbuffer_t;
 
 #define CBUFFER_SUCCESS 0
@@ -1117,101 +1117,101 @@ typedef struct
 
 // Initializes a cbuffer handle with given memory and size.
 static inline void cbuffer_init(cbuffer_t *dest, void *mem, int size) {
-	dest->buf = mem;
-	dest->size = size;
-	dest->used = 0;
-	dest->read = 0;
-	dest->write = 0;
+    dest->buf = mem;
+    dest->size = size;
+    dest->used = 0;
+    dest->read = 0;
+    dest->write = 0;
 }
 
 // Returns the number of free bytes in buffer.
 static inline int cbuffer_get_free(cbuffer_t *buf) {
-	return buf->size - buf->used;
+    return buf->size - buf->used;
 }
 
 // Returns the number of used bytes in buffer.
 static inline int cbuffer_get_used(cbuffer_t *buf) {
-	return buf->used;
+    return buf->used;
 }
 
 // Writes given data to buffer.
 // Returns CBUFFER_SUCCESS or CBUFFER_NOMEM if out of memory.
 static inline int cbuffer_enqueue(cbuffer_t *buf, const void *data, int data_size) {
-	int free = cbuffer_get_free(buf);
+    int free = cbuffer_get_free(buf);
 
-	// Out of memory?
-	if (free < data_size)
-		return CBUFFER_NOMEM;
+    // Out of memory?
+    if (free < data_size)
+        return CBUFFER_NOMEM;
 
-	// Is the data split in the end?
-	if (buf->write + data_size > buf->size) {
-		int first_size = buf->size - buf->write;
-		memcpy(buf->buf + buf->write, data, first_size);
-		memcpy(buf->buf, ((char *)data) + first_size, data_size - first_size);
-	}
-	else {
-		memcpy(buf->buf + buf->write, data, data_size);
-	}
-	buf->write += data_size;
-	if (buf->write >= buf->size)
-		buf->write -= buf->size;
+    // Is the data split in the end?
+    if (buf->write + data_size > buf->size) {
+        int first_size = buf->size - buf->write;
+        memcpy(buf->buf + buf->write, data, first_size);
+        memcpy(buf->buf, ((char *)data) + first_size, data_size - first_size);
+    }
+    else {
+        memcpy(buf->buf + buf->write, data, data_size);
+    }
+    buf->write += data_size;
+    if (buf->write >= buf->size)
+        buf->write -= buf->size;
 
-	buf->used += data_size;
-	return CBUFFER_SUCCESS;
+    buf->used += data_size;
+    return CBUFFER_SUCCESS;
 }
 
 // Advances the read pointer by given count.
 // Returns CBUFFER_SUCCESS on success or CBUFFER_NOMEM if count is more than available data
 static inline int cbuffer_advance(cbuffer_t *buf, int count) {
-	int used = cbuffer_get_used(buf);
+    int used = cbuffer_get_used(buf);
 
-	if (count > used)
-		return CBUFFER_NOMEM;
+    if (count > used)
+        return CBUFFER_NOMEM;
 
-	buf->read += count;
-	if (buf->read >= buf->size)
-		buf->read -= buf->size;
+    buf->read += count;
+    if (buf->read >= buf->size)
+        buf->read -= buf->size;
 
-	// Reset pointers to 0 if buffer is empty in order to avoid unwanted wrapps.
-	if (buf->read == buf->write) {
-		buf->read = 0;
-		buf->write = 0;
-	}
+    // Reset pointers to 0 if buffer is empty in order to avoid unwanted wrapps.
+    if (buf->read == buf->write) {
+        buf->read = 0;
+        buf->write = 0;
+    }
 
-	buf->used -= count;
-	return CBUFFER_SUCCESS;
+    buf->used -= count;
+    return CBUFFER_SUCCESS;
 }
 
 // Reset instance (clear buffer)
 static inline void cbuffer_reset(cbuffer_t *buf) {
-	buf->read = 0;
-	buf->write = 0;
-	buf->used = 0;
+    buf->read = 0;
+    buf->write = 0;
+    buf->used = 0;
 }
 
 // Copies given "count" bytes to the "dst" buffer without advancing the buffer read offset.
 // Returns CBUFFER_SUCCESS on success or CBUFFER_NOMEM if count is more than available data.
 static inline int cbuffer_copyto(cbuffer_t *buf, void *dst, int count, int offset) {
-	
-	if (count > cbuffer_get_used(buf))
-		return CBUFFER_NOMEM;
+    
+    if (count > cbuffer_get_used(buf))
+        return CBUFFER_NOMEM;
 
-	int a0 = buf->read + offset;
-	if (a0 >= buf->size)
-		a0 -= buf->size;
+    int a0 = buf->read + offset;
+    if (a0 >= buf->size)
+        a0 -= buf->size;
 
-	int c0 = count;
-	if (a0 + c0 > buf->size)
-		c0 = buf->size - a0;
-	
-	memcpy(dst, buf->buf + a0, c0);
-	
-	int c1 = count - c0;
+    int c0 = count;
+    if (a0 + c0 > buf->size)
+        c0 = buf->size - a0;
+    
+    memcpy(dst, buf->buf + a0, c0);
+    
+    int c1 = count - c0;
 
-	if (c1 > 0)
-		memcpy(((char *)dst) + c0, buf->buf, c1);
+    if (c1 > 0)
+        memcpy(((char *)dst) + c0, buf->buf, c1);
 
-	return CBUFFER_SUCCESS;
+    return CBUFFER_SUCCESS;
 }
 
 // Returns a read pointer at given offset and  
@@ -1221,24 +1221,24 @@ static inline int cbuffer_copyto(cbuffer_t *buf, void *dst, int count, int offse
 // This happens when the read has to be split in two since it's a circular buffer.
 static inline void *cbuffer_readptr(cbuffer_t* buf, int offset, int *can_read_bytes)
 {
-	int a0 = buf->read + offset;
-	if (a0 >= buf->size)
-		a0 -= buf->size;
-	if (can_read_bytes != NULL)
-	{
-		int c0 = buf->used;
-		if (a0 + c0 > buf->size)
-			c0 = buf->size - a0;
+    int a0 = buf->read + offset;
+    if (a0 >= buf->size)
+        a0 -= buf->size;
+    if (can_read_bytes != NULL)
+    {
+        int c0 = buf->used;
+        if (a0 + c0 > buf->size)
+            c0 = buf->size - a0;
 
-		*can_read_bytes = c0;
-	}
-	return buf->buf + a0;
+        *can_read_bytes = c0;
+    }
+    return buf->buf + a0;
 }
 
 typedef struct {
-	cbuffer_t data_buffer;			// Circular Buffer for features
-	int input_size;					// Number of bytes in each input chunk
-	int window_count;				// Number of input chunks in output window.
+    cbuffer_t data_buffer;          // Circular Buffer for features
+    int input_size;                 // Number of bytes in each input chunk
+    int window_count;               // Number of input chunks in output window.
 } fixwin_t;
 
 #ifdef _MSC_VER
@@ -1259,116 +1259,116 @@ static_assert(sizeof(fixwin_t) <= 64, "Data structure 'fixwin_t' is too big");
 */
 static inline int fixwin_dequeuef32(void* restrict handle, void* restrict dst, int stride_count)
 {
-	fixwin_t* fep = (fixwin_t*)handle;
+    fixwin_t* fep = (fixwin_t*)handle;
 
-	const int stride_bytes = stride_count * fep->input_size;
-	const int size = fep->window_count * fep->input_size;
-	if (cbuffer_get_used(&fep->data_buffer) >= size) {
-		if (cbuffer_copyto(&fep->data_buffer, dst, size, 0) != 0)
-			return IPWIN_RET_NOMEM;
+    const int stride_bytes = stride_count * fep->input_size;
+    const int size = fep->window_count * fep->input_size;
+    if (cbuffer_get_used(&fep->data_buffer) >= size) {
+        if (cbuffer_copyto(&fep->data_buffer, dst, size, 0) != 0)
+            return IPWIN_RET_NOMEM;
 
-		if (cbuffer_advance(&fep->data_buffer, stride_bytes) != 0)
-			return IPWIN_RET_NOMEM;
+        if (cbuffer_advance(&fep->data_buffer, stride_bytes) != 0)
+            return IPWIN_RET_NOMEM;
 
-		return IPWIN_RET_SUCCESS;
-	}
-	return IPWIN_RET_NODATA;
+        return IPWIN_RET_SUCCESS;
+    }
+    return IPWIN_RET_NODATA;
 }
 
 static inline float mac_f32(const float* restrict a, const float* restrict b, int count)
 {
-	float sum = 0;
-	for (int i = 0; i < count; i++) {
-		sum += *a++ * *b++;
-	}
-	return sum;
+    float sum = 0;
+    for (int i = 0; i < count; i++) {
+        sum += *a++ * *b++;
+    }
+    return sum;
 }
 
 static inline void conv1d_flat_f32(
-	const float* restrict input,
-	const float* restrict weight,
-	float* restrict output,
-	int top,
-	int bottom,
-	int n_output_rows,
-	int filters,
-	int strides,
-	int kernel_size)
+    const float* restrict input,
+    const float* restrict weight,
+    float* restrict output,
+    int top,
+    int bottom,
+    int n_output_rows,
+    int filters,
+    int strides,
+    int kernel_size)
 {
-	for (int i = 0; i < n_output_rows; i++) {
-		const float* wp = weight;		// Weight matrix
-		const float* bp = input;		// Input matrix
-		const int step = i * strides;	// Row size
-		int len = kernel_size;			// Normally do one kernel
+    for (int i = 0; i < n_output_rows; i++) {
+        const float* wp = weight;       // Weight matrix
+        const float* bp = input;        // Input matrix
+        const int step = i * strides;   // Row size
+        int len = kernel_size;          // Normally do one kernel
 
-		int skip = top - step;			// Pad top?
-		if (skip > 0) {
-			len -= skip;				// Trim kernel length
-			wp += skip;					// Advance kernel
-		}
-		else {						// No top padding,
-			bp -= skip;					// Rollback input
-		}
+        int skip = top - step;          // Pad top?
+        if (skip > 0) {
+            len -= skip;                // Trim kernel length
+            wp += skip;                 // Advance kernel
+        }
+        else {                      // No top padding,
+            bp -= skip;                 // Rollback input
+        }
 
-		skip = step + len - bottom;		// Pad bottom?
-		if (skip > 0)
-			len -= skip;				// Just cut the kernel at end
+        skip = step + len - bottom;     // Pad bottom?
+        if (skip > 0)
+            len -= skip;                // Just cut the kernel at end
 
-		float* op = output + i * filters;
-		for (int j = 0; j < filters; j++) {
-			*op++ = mac_f32(wp + j * kernel_size, bp, len);
-		}
-	}
+        float* op = output + i * filters;
+        for (int j = 0; j < filters; j++) {
+            *op++ = mac_f32(wp + j * kernel_size, bp, len);
+        }
+    }
 }
 
 static inline void mul_f32(
-	const float* restrict a,
-	const float* restrict b,
-	int l, int g1, int m, int g2, int r,
-	float* restrict output)
+    const float* restrict a,
+    const float* restrict b,
+    int l, int g1, int m, int g2, int r,
+    float* restrict output)
 {
-	int index = 0;
-	for (int x = 0; x < l; x++) {
-		for (int i = 0; i < g1; i++) {
-			for (int y = 0; y < m; y++) {
-				for (int j = 0; j < g2; j++) {
-					for (int z = 0; z < r; z++) {
-						output[index] = a[index] * b[x * m * r + y * r + z];
-						index++;
-					}
-				}
-			}
-		}
-	}
+    int index = 0;
+    for (int x = 0; x < l; x++) {
+        for (int i = 0; i < g1; i++) {
+            for (int y = 0; y < m; y++) {
+                for (int j = 0; j < g2; j++) {
+                    for (int z = 0; z < r; z++) {
+                        output[index] = a[index] * b[x * m * r + y * r + z];
+                        index++;
+                    }
+                }
+            }
+        }
+    }
 }
 
 static inline void add_f32(
-	const float* restrict a,
-	const float* restrict b,
-	int l, int g1, int m, int g2, int r,
-	float* restrict output)
+    const float* restrict a,
+    const float* restrict b,
+    int l, int g1, int m, int g2, int r,
+    float* restrict output)
 {
-	int index = 0;
-	for (int x = 0; x < l; x++) {
-		for (int i = 0; i < g1; i++) {
-			for (int y = 0; y < m; y++) {
-				for (int j = 0; j < g2; j++) {
-					for (int z = 0; z < r; z++) {
-						output[index] = a[index] + b[x * m * r + y * r + z];
-						index++;
-					}
-				}
-			}
-		}
-	}
+    int index = 0;
+    for (int x = 0; x < l; x++) {
+        for (int i = 0; i < g1; i++) {
+            for (int y = 0; y < m; y++) {
+                for (int j = 0; j < g2; j++) {
+                    for (int z = 0; z < r; z++) {
+                        output[index] = a[index] + b[x * m * r + y * r + z];
+                        index++;
+                    }
+                }
+            }
+        }
+    }
 }
 
 static inline void relu_f32(const float* restrict x, int count, float* restrict result)
 {
-	for (int i = 0; i < count; i++) {
-		const float value = *x++;
-		*result++ = value > 0 ? value : 0;
-	}
+    for (int i = 0; i < count; i++) {
+        const float value = *x++;
+        *result++ = value > 0 ? value : 0;
+    }
 }
 
 static inline float maxpool1d_f32_max(const float *restrict x, int ncols, int pool_size)
@@ -1409,47 +1409,47 @@ static inline void maxpool1d_valid_f32(
 
 static inline float _globav1d_f32_mean(const float *restrict x, int nchannel, int nsteps)
 {
-	float mean = 0.0;
-	for (int i = 0; i < nsteps; i++) {
-		const float value = *(x + i * nchannel);
-		mean = mean + value;
-	}
-	mean = mean/(float)nsteps;
-	return mean;
+    float mean = 0.0;
+    for (int i = 0; i < nsteps; i++) {
+        const float value = *(x + i * nchannel);
+        mean = mean + value;
+    }
+    mean = mean/(float)nsteps;
+    return mean;
 }
 
 static inline void globav1d_f32(const float *restrict x, int nsteps, int nchannel, float *restrict result)
 {
-	// Loop over all channels
-	for (int i = 0; i < nchannel; i++) {
-		const float* xp = x + i;
-		*result++ = _globav1d_f32_mean(xp, nchannel, nsteps);
-	}
+    // Loop over all channels
+    for (int i = 0; i < nchannel; i++) {
+        const float* xp = x + i;
+        *result++ = _globav1d_f32_mean(xp, nchannel, nsteps);
+    }
 }
 
 static inline void dott_f32(const float *restrict a, const float *restrict b, float *restrict out, int d0, int d1, int d2)
 {
-	for (int i = 0; i < d2; i++) {
-		float* op = out;
-		for (int j = 0; j < d1; j++) {
-			*op++ = mac_f32(a + j * d0, b, d0);
-		}
-		out += d1;
-		b += d0;
-	}
+    for (int i = 0; i < d2; i++) {
+        float* op = out;
+        for (int j = 0; j < d1; j++) {
+            *op++ = mac_f32(a + j * d0, b, d0);
+        }
+        out += d1;
+        b += d0;
+    }
 }
 
 static inline void softmax_f32(const float* restrict x, int count, float* restrict result)
 {
-	float sum = 0;
-	for (int i = 0; i < count; i++) {
-		float value = expf(x[i]);
-		sum += value;
-		result[i] = value;
-	}
-	for (int i = 0; i < count; i++) {
-		result[i] /= sum;
-	}
+    float sum = 0;
+    for (int i = 0; i < count; i++) {
+        float value = expf(x[i]);
+        sum += value;
+        result[i] = value;
+    }
+    for (int i = 0; i < count; i++) {
+        result[i] /= sum;
+    }
 }
 
 /**
@@ -1461,12 +1461,12 @@ static inline void softmax_f32(const float* restrict x, int count, float* restri
  */
 static inline int fixwin_enqueuef32(void* restrict handle, const void* restrict data)
 {
-	fixwin_t* fep = (fixwin_t*)handle;
+    fixwin_t* fep = (fixwin_t*)handle;
 
-	if (cbuffer_enqueue(&fep->data_buffer, data, fep->input_size) != 0)
-		return IPWIN_RET_NOMEM;
+    if (cbuffer_enqueue(&fep->data_buffer, data, fep->input_size) != 0)
+        return IPWIN_RET_NOMEM;
 
-	return IPWIN_RET_SUCCESS;
+    return IPWIN_RET_SUCCESS;
 }
 
 /**
@@ -1479,15 +1479,15 @@ static inline int fixwin_enqueuef32(void* restrict handle, const void* restrict 
 */
 static inline void fixwin_initf32(void* restrict handle, int input_size, int window_count)
 {
-	fixwin_t* fep = (fixwin_t*)handle;
-	fep->input_size = input_size;
-	fep->window_count = window_count;
+    fixwin_t* fep = (fixwin_t*)handle;
+    fep->input_size = input_size;
+    fep->window_count = window_count;
 
-	char* mem = ((char*)handle) + sizeof(fixwin_t);
+    char* mem = ((char*)handle) + sizeof(fixwin_t);
 
-	int data_buffer = input_size * window_count;
-	
-	cbuffer_init(&fep->data_buffer, mem, data_buffer);
+    int data_buffer = input_size * window_count;
+    
+    cbuffer_init(&fep->data_buffer, mem, data_buffer);
 }
 
 #define __RETURN_ERROR(_exp) do { int __ret = (_exp); if(__ret < 0) return __ret; } while(0)

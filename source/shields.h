@@ -5,7 +5,7 @@
 * interfacing with the sensors based on supported Infineon Arduino shields.
 *
 *******************************************************************************
-* Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -39,7 +39,6 @@
 
 #define IMU_INTERFACE_I2C                   (0)
 #define IMU_INTERFACE_SPI                   (1)
-
 #if defined(SENSE_SHIELDv1)
     #include "cy8ckit_028_sense_pins.h"
     #include "mtb_bmx160.h"
@@ -144,6 +143,18 @@
 
     typedef mtb_bmi160_t                    mtb_imu_t;
     typedef mtb_bmi160_data_t               mtb_imu_data_t;
+
+#elif defined(AI_KIT)
+    #include "mtb_bmi270.h"
+
+    #define IMU_I2C_ADDRESS                 (MTB_BMI270_ADDRESS_DEFAULT)
+    #define imu_i2c_init(obj, i2c, address) mtb_bmi270_init_i2c(obj, i2c, address)
+    #define imu_config_default(obj)         mtb_bmi270_config_default(obj)
+    #define imu_read(obj, data)             mtb_bmi270_read(obj, data)
+    #define imu_get_sensor(mtb_obj)         (mtb_obj->sensor)
+
+    typedef mtb_bmi270_t                    mtb_imu_t;
+    typedef mtb_bmi270_data_t               mtb_imu_data_t;
 #else
-    #error "Undefined interface for sensors. Expecting either the [SENSEv1|SENSEv2|TFT|EPD]_SHILED to be defined in the Makefile"
+    #error "Undefined interface for sensors. Expecting either the [SENSEv1|SENSEv2|TFT|EPD]_SHILED or AI_KIT to be defined in the Makefile"
 #endif

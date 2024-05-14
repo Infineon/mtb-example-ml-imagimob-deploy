@@ -5,7 +5,7 @@
 * the IMU sensor.
 *
 *******************************************************************************
-* Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -38,7 +38,7 @@
 *******************************************************************************/
 
 #include "utils.h"
-
+#include "cybsp.h"
 #if (IMU_INTERFACE_I2C == IMU_INTERFACE_SELECTED)
 #include "cyhal_i2c.h"
 
@@ -67,17 +67,35 @@ cyhal_spi_t* get_spi(void)
 #endif
 
 
-static void update_sensor_ranges(struct bmi160_dev* sensor)
-{
-    /* Select the Output data rate, range of accelerometer sensor */
-    sensor->accel_cfg.range = BMI160_ACCEL_RANGE_8G;
-    sensor->gyro_cfg.range = BMI160_GYRO_RANGE_500_DPS;
-    int8_t status = bmi160_set_sens_conf(sensor);
-    if (BMI160_OK != status)
+#if defined(AI_KIT)
+    static void update_sensor_ranges_bmi270(struct bmi2_dev* sensor)
     {
-        MTB_HALT("Error updating the IMU sensor configuration.\n");
+        struct bmi2_sens_config config = {0};
+        /* Select the Output data rate, range of accelerometer sensor */
+        config.type = BMI2_ACCEL;
+        config.cfg.acc.range = BMI2_ACC_RANGE_8G;
+        int8_t status = bmi2_set_sensor_config(&config, 1, sensor);
+        config.type = BMI2_GYRO;
+        config.cfg.gyr.range = BMI2_GYRO_FOC_500_DPS_REF;
+        status = bmi2_set_sensor_config(&config, 1, sensor);
+        if (BMI2_OK != status)
+        {
+            MTB_HALT("Error updating the IMU sensor configuration.\n");
+        }
     }
-}
+#else
+    static void update_sensor_ranges_bmi160(struct bmi160_dev* sensor)
+    {
+        /* Select the Output data rate, range of accelerometer sensor */
+        sensor->accel_cfg.range = BMI160_ACCEL_RANGE_8G;
+        sensor->gyro_cfg.range = BMI160_GYRO_RANGE_500_DPS;
+        int8_t status = bmi160_set_sens_conf(sensor);
+        if (BMI160_OK != status)
+        {
+            MTB_HALT("Error updating the IMU sensor configuration.\n");
+        }
+    }
+#endif
 
 
 /*******************************************************************************
@@ -97,13 +115,32 @@ void imu_init(mtb_imu_t* motion_sensor)
 {
     cy_rslt_t result;
 
+#ifdef AI_KIT
+    static const cyhal_i2c_cfg_t i2c_cfg = {
+        .is_slave        = false,
+        .address         = 0,
+        .frequencyhal_hz = IMU_I2C_FREQUENCY,
+    };
+    /* Initialize the I2C master interface for BMI160 motion sensor */
+    result = cyhal_i2c_init(&i2c_obj, (cyhal_gpio_t) CYBSP_I2C_SDA,
+            (cyhal_gpio_t) CYBSP_I2C_SCL, NULL);
+    MTB_HALT_IF_ERROR(result, "Unable to initialize the I2C interface.\n");
+    result = cyhal_i2c_configure(&i2c_obj, &i2c_cfg);
+    MTB_HALT_IF_ERROR(result, "Unable to configure the I2C interface.\n");
+    result = imu_i2c_init(motion_sensor, &i2c_obj, IMU_I2C_ADDRESS);
+    MTB_HALT_IF_ERROR(result, "Unable to initialize the IMU over I2C.\n");
+
+    result = imu_config_default(motion_sensor);
+    MTB_HALT_IF_ERROR(result, "Unable to apply the default sensor configuration.\n");
+
+    update_sensor_ranges_bmi270(&(imu_get_sensor(motion_sensor)));
+#else
 #if (IMU_INTERFACE_I2C == IMU_INTERFACE_SELECTED)
     static const cyhal_i2c_cfg_t i2c_cfg = {
         .is_slave        = false,
         .address         = 0,
         .frequencyhal_hz = IMU_I2C_FREQUENCY,
     };
-
     /* Initialize the I2C master interface for BMI160 motion sensor */
     result = cyhal_i2c_init(&i2c_obj, IMU_I2C_SDA, IMU_I2C_SCL, NULL);
     MTB_HALT_IF_ERROR(result, "Unable to initialize the I2C interface.\n");
@@ -127,5 +164,7 @@ void imu_init(mtb_imu_t* motion_sensor)
     result = imu_config_default(motion_sensor);
     MTB_HALT_IF_ERROR(result, "Unable to apply the default sensor configuration.\n");
 
-    update_sensor_ranges(&(imu_get_sensor(motion_sensor)));
+    update_sensor_ranges_bmi160(&(imu_get_sensor(motion_sensor)));
+#endif
+
 }

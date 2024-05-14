@@ -6,9 +6,9 @@
 *
 * Related Document: See README.md
 *
-********************************************************************************
-* Copyright 2023, Cypress Semiconductor Corporation (an Infineon company)
-* or an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
+*******************************************************************************
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
 * materials ("Software") is owned by Cypress Semiconductor Corporation
@@ -205,10 +205,14 @@ static void imu_read_handler(void *callback_arg, cyhal_timer_event_t event)
         imu_data.accel.y / (float)IMU_MODEL_CONVERSION_FACTOR,
         imu_data.accel.x / (float)IMU_MODEL_CONVERSION_FACTOR,
         imu_data.accel.z / -(float)IMU_MODEL_CONVERSION_FACTOR,
-#else
+#elif defined(EPD_SHIELD) || defined(TFT_SHIELD)
         imu_data.accel.x / (float)IMU_MODEL_CONVERSION_FACTOR,
         imu_data.accel.y / (float)IMU_MODEL_CONVERSION_FACTOR,
         imu_data.accel.z / (float)IMU_MODEL_CONVERSION_FACTOR,
+#else
+        imu_data.sensor_data.acc.x / (float)IMU_MODEL_CONVERSION_FACTOR,
+        imu_data.sensor_data.acc.y / (float)IMU_MODEL_CONVERSION_FACTOR,
+        imu_data.sensor_data.acc.z / (float)IMU_MODEL_CONVERSION_FACTOR,
 #endif
     };
 
